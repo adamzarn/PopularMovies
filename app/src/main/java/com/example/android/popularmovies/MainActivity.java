@@ -101,11 +101,11 @@ public class MainActivity extends AppCompatActivity {
                 int i = 0;
                 for (JSONObject movie : movies) {
                     try {
-                        String title = movie.getString("original_title");
-                        String release_date = movie.getString("release_date");
-                        String vote_average = movie.getString("vote_average");
-                        String plot_synopsis = movie.getString("overview");
-                        String poster_path = movie.getString("poster_path");
+                        String title = movie.getString(getString(R.string.original_title));
+                        String release_date = movie.getString(getString(R.string.release_date));
+                        String vote_average = movie.getString(getString(R.string.vote_average));
+                        String plot_synopsis = movie.getString(getString(R.string.plot_synopsis));
+                        String poster_path = movie.getString(getString(R.string.poster_jpg));
                         MovieObject newMovie = new MovieObject(title, release_date, vote_average, plot_synopsis, poster_path);
                         movieObjects[i] = newMovie;
                     } catch (JSONException e) {
@@ -139,16 +139,16 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences preferences = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
 
         if (id == R.id.most_popular) {
-            makeMovieDBSearchQuery("popular");
-            moviePreference = "popular";
+            makeMovieDBSearchQuery(getString(R.string.QUERY_POPULAR));
+            moviePreference = getString(R.string.QUERY_POPULAR);
             SharedPreferences.Editor editor = preferences.edit();
             editor.putString("moviePreference", moviePreference);
             editor.apply();
             myTextView.setText(getString(R.string.most_popular));
             return true;
         } else if (id == R.id.top_rated) {
-            makeMovieDBSearchQuery("top_rated");
-            moviePreference = "top_rated";
+            makeMovieDBSearchQuery(getString(R.string.QUERY_TOP_RATED));
+            moviePreference = getString(R.string.QUERY_TOP_RATED);
             SharedPreferences.Editor editor = preferences.edit();
             editor.putString("moviePreference", moviePreference);
             editor.apply();

@@ -8,14 +8,10 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.content.Intent;
-import android.view.MenuItem;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.net.URL;
 
 public class MovieDetailActivity extends AppCompatActivity {

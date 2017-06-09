@@ -25,8 +25,7 @@ public class MovieDBClient {
         try {
             InputStream is = am.open("keys.txt");
             Scanner s = new Scanner(is).useDelimiter("\\A");
-            String apiKey = s.hasNext() ? s.next() : "";
-            return apiKey;
+            return s.hasNext() ? s.next() : "";
         } catch (IOException e) {
             e.printStackTrace();
             return e.toString();
@@ -78,20 +77,6 @@ public class MovieDBClient {
             throws JSONException {
 
         final String MOVIE_RESULTS = "results";
-
-        final String MOVIE_POSTER_PATH = "poster_path";
-        final String MOVIE_ADULT = "adult";
-        final String MOVIE_OVERVIEW = "overview";
-        final String MOVIE_RELEASE_DATE = "weather";
-        final String MOVIE_GENRE_IDS = "genre_ids";
-        final String MOVIE_ORIGINAL_TITLE = "original_title";
-        final String MOVIE_ORIGINAL_LANGUAGE = "original_language";
-        final String MOVIE_BACKDROP_PATH = "backdrop_path";
-        final String MOVIE_POPULARITY = "popularity";
-        final String MOVIE_VOTE_COUNT = "vote_count";
-        final String MOVIE_VIDEO = "video";
-        final String MOVIE_VOTE_AVERAGE = "vote_average";
-
         final String MOVIE_STATUS_CODE = "status_code";
 
         String[] parsedMovieData = null;
