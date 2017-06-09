@@ -13,10 +13,11 @@ import java.net.URL;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import org.json.JSONObject;
+import org.json.JSONException;
+
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-
-import java.lang.Math.*;
 
 /**
  * Created by adamzarn on 5/31/17.
@@ -25,19 +26,20 @@ import java.lang.Math.*;
 public class GridViewAdapter extends BaseAdapter {
 
     private Context context;
-    private String[] myImageData = null;
+    private MovieObject[] myMovieData = null;
 
     public GridViewAdapter(Context c) {
         context = c;
     }
 
     public int getCount() {
-        if (myImageData == null) { return 0; }
-        return myImageData.length;
+        if (myMovieData == null) { return 0; }
+        return myMovieData.length;
     }
 
-    public Object getItem(int position) {
-        return null;
+    public MovieObject getItem(int position) {
+        if (myMovieData == null) { return null; }
+        return myMovieData[position];
     }
 
     public long getItemId(int position) {
@@ -53,7 +55,8 @@ public class GridViewAdapter extends BaseAdapter {
         if (convertView == null) {
             imageView = new ImageView(context);
             int x = getScreenWidth()/2;
-            int y = x+300;
+            Double yDouble = x*1.5027;
+            int y = yDouble.intValue();
             imageView.setLayoutParams(new GridView.LayoutParams(x, y));
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             imageView.setPadding(0, 0, 0, 0);
@@ -61,24 +64,20 @@ public class GridViewAdapter extends BaseAdapter {
             imageView = (ImageView) convertView;
         }
 
-        String URLString = "http://image.tmdb.org/t/p/w185/" + myImageData[position];
-        for (String i : myImageData) {
-            System.out.println(i);
-        }
-        System.out.println(URLString);
-        System.out.println(position);
-        System.out.println(" ");
+        MovieObject currentMovie = myMovieData[position];
+
+        String currentMoviePoster;
+
+        currentMoviePoster = currentMovie.getPosterPath();
+        String URLString = context.getResources().getString(R.string.poster_path_base_url) + currentMoviePoster;
         ImageQueryTask task = new ImageQueryTask(context, imageView);
         task.execute(URLString);
 
         return imageView;
     }
 
-    public void setImageData(String[] imageData) {
-        myImageData = imageData;
-        for (String i : myImageData) {
-            System.out.println(i);
-        }
+    public void setData(MovieObject[] movies) {
+        myMovieData = movies;
         notifyDataSetChanged();
     }
 
