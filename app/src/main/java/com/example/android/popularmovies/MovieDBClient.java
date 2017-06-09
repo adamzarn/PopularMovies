@@ -10,6 +10,10 @@ import java.util.Scanner;
 import android.content.Context;
 import android.net.Uri;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  * Created by adamzarn on 5/30/17.
  */
@@ -52,7 +56,6 @@ public class MovieDBClient {
     }
 
     public static String getResponseFromHttpUrl(URL url) throws IOException {
-        System.out.println("Calling getResponse");
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
         try {
             InputStream in = urlConnection.getInputStream();
@@ -69,5 +72,55 @@ public class MovieDBClient {
         } finally {
             urlConnection.disconnect();
         }
+    }
+
+    public static JSONObject[] getSimpleMovieStringsFromJson(Context context, String movieJsonStr)
+            throws JSONException {
+
+        final String MOVIE_RESULTS = "results";
+
+        final String MOVIE_POSTER_PATH = "poster_path";
+        final String MOVIE_ADULT = "adult";
+        final String MOVIE_OVERVIEW = "overview";
+        final String MOVIE_RELEASE_DATE = "weather";
+        final String MOVIE_GENRE_IDS = "genre_ids";
+        final String MOVIE_ORIGINAL_TITLE = "original_title";
+        final String MOVIE_ORIGINAL_LANGUAGE = "original_language";
+        final String MOVIE_BACKDROP_PATH = "backdrop_path";
+        final String MOVIE_POPULARITY = "popularity";
+        final String MOVIE_VOTE_COUNT = "vote_count";
+        final String MOVIE_VIDEO = "video";
+        final String MOVIE_VOTE_AVERAGE = "vote_average";
+
+        final String MOVIE_STATUS_CODE = "status_code";
+
+        String[] parsedMovieData = null;
+
+        JSONObject movieJson = new JSONObject(movieJsonStr);
+
+        /* Is there an error? */
+        if (movieJson.has(MOVIE_STATUS_CODE)) {
+            int errorCode = movieJson.getInt(MOVIE_STATUS_CODE);
+
+            switch (errorCode) {
+                case HttpURLConnection.HTTP_OK:
+                    break;
+                case HttpURLConnection.HTTP_NOT_FOUND:
+                    return null;
+                default:
+                    return null;
+            }
+        }
+
+        JSONArray movieArray = movieJson.getJSONArray(MOVIE_RESULTS);
+        JSONObject[] movies = new JSONObject[movieArray.length()];
+
+        for (int i = 0; i < movieArray.length(); i++) {
+
+            JSONObject movie = movieArray.getJSONObject(i);
+            movies[i] = movie;
+
+        }
+        return movies;
     }
 }
