@@ -1,13 +1,11 @@
 package com.example.android.popularmovies;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-
+import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -53,13 +51,8 @@ public class MovieDetailActivity extends AppCompatActivity {
 
     }
 
-    public static int getScreenWidth() {
-        return Resources.getSystem().getDisplayMetrics().widthPixels;
-    }
-
     public void getMoviePoster(String moviePoster) {
         String URLString = context.getResources().getString(R.string.poster_path_base_url) + moviePoster;
-        System.out.println(URLString);
         new ImageQueryTask().execute(URLString);
     }
 

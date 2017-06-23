@@ -2,32 +2,37 @@ package com.example.android.popularmovies;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
+import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.GridView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.view.View;
 import android.widget.AdapterView;
-import android.content.SharedPreferences;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.GridView;
 import android.widget.TextView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.net.URL;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<JSONObject[]> {
 
     GridViewAdapter myGridViewAdapter;
     String moviePreference;
     TextView myTextView;
     Context context;
     MenuItem selectedMenuItem;
+
+    private static final String SEARCH_QUERY_URL_EXTRA = "query";
+    private static final int MOVIE_QUERY_LOADER = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,58 +74,79 @@ public class MainActivity extends AppCompatActivity {
         MovieDBClient client = new MovieDBClient();
         String apiKey = client.getApiKey(getApplicationContext());
         URL movieDBSearchUrl = MovieDBClient.buildUrl(movieType, apiKey);
-        new MovieDBQueryTask().execute(movieDBSearchUrl);
+        Bundle queryBundle = new Bundle();
+        queryBundle.putString(SEARCH_QUERY_URL_EXTRA, movieDBSearchUrl.toString());
+
+        LoaderManager loaderManager = getSupportLoaderManager();
+        Loader<JSONObject[]> movieQueryLoader = loaderManager.getLoader(MOVIE_QUERY_LOADER);
+
+        if (movieQueryLoader == null) {
+            loaderManager.initLoader(MOVIE_QUERY_LOADER, queryBundle, this).forceLoad();
+        } else {
+            loaderManager.restartLoader(MOVIE_QUERY_LOADER, queryBundle, this).forceLoad();
+        }
+
     }
 
-    private class MovieDBQueryTask extends AsyncTask<URL, Void, JSONObject[]> {
-        @Override
-        protected JSONObject[] doInBackground(URL... urls) {
-            URL searchUrl = urls[0];
-            JSONObject[] movies = null;
-
-            try {
-                String jsonMovieResponse = MovieDBClient
-                        .getResponseFromHttpUrl(searchUrl);
-
-                movies = MovieDBClient
-                        .getSimpleMovieStringsFromJson(MainActivity.this, jsonMovieResponse);
-
-                return movies;
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
+    @Override
+    public Loader<JSONObject[]> onCreateLoader(int id, final Bundle args) {
+        return new AsyncTaskLoader<JSONObject[]>(this) {
+            @Override
+            protected void onStartLoading() {
+                super.onStartLoading();
+                if (args == null) {
+                    return;
+                }
             }
 
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject[] movies) {
-            if (movies != null) {
-                MovieObject[] movieObjects = new MovieObject[movies.length];
-                int i = 0;
-                for (JSONObject movie : movies) {
-                    try {
-                        String title = movie.getString(getString(R.string.original_title));
-                        String release_date = movie.getString(getString(R.string.release_date));
-                        String vote_average = movie.getString(getString(R.string.vote_average));
-                        String plot_synopsis = movie.getString(getString(R.string.plot_synopsis));
-                        String poster_path = movie.getString(getString(R.string.poster_jpg));
-                        MovieObject newMovie = new MovieObject(title, release_date, vote_average, plot_synopsis, poster_path);
-                        movieObjects[i] = newMovie;
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    i = i + 1;
+            @Override
+            public JSONObject[] loadInBackground() {
+                String searchQueryUrlString = args.getString(SEARCH_QUERY_URL_EXTRA);
+                if (searchQueryUrlString == null || TextUtils.isEmpty(searchQueryUrlString)) {
+                    return null;
                 }
-                System.out.println(movieObjects.length);
-                for (MovieObject movie : movieObjects) {
-                    System.out.println(movie.getTitle());
+                JSONObject[] movies = null;
+                try {
+                    URL searchUrl = new URL(searchQueryUrlString);
+                    String jsonMovieResponse = MovieDBClient
+                            .getResponseFromHttpUrl(searchUrl);
+                    movies = MovieDBClient
+                            .getSimpleMovieStringsFromJson(MainActivity.this, jsonMovieResponse);
+                    System.out.println(movies.length);
+                    return movies;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
                 }
-                myGridViewAdapter.setData(movieObjects);
             }
-        }
+        };
+    }
 
+    @Override
+    public void onLoadFinished(Loader<JSONObject[]> loader, JSONObject[] movies) {
+        if (movies != null) {
+            MovieObject[] movieObjects = new MovieObject[movies.length];
+            int i = 0;
+            for (JSONObject movie : movies) {
+                try {
+                    String title = movie.getString(getString(R.string.original_title));
+                    String release_date = movie.getString(getString(R.string.release_date));
+                    String vote_average = movie.getString(getString(R.string.vote_average));
+                    String plot_synopsis = movie.getString(getString(R.string.plot_synopsis));
+                    String poster_path = movie.getString(getString(R.string.poster_jpg));
+                    MovieObject newMovie = new MovieObject(title, release_date, vote_average, plot_synopsis, poster_path);
+                    movieObjects[i] = newMovie;
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                i = i + 1;
+            }
+            myGridViewAdapter.setData(movieObjects);
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<JSONObject[]> loader) {
     }
 
     @Override
@@ -155,7 +181,6 @@ public class MainActivity extends AppCompatActivity {
             myTextView.setText(getString(R.string.top_rated));
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 }
