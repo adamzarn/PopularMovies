@@ -21,7 +21,7 @@ public class TrailerRecyclerViewAdapter extends RecyclerView.Adapter<TrailerRecy
     private TrailerObject[] myTrailerData = null;
 
     public interface TrailerClickListener {
-        void onListItemClick(int clickedItemIndex);
+        void onListItemClick(View view, int clickedItemIndex);
     }
 
     public TrailerRecyclerViewAdapter(TrailerClickListener listener) {
@@ -30,7 +30,7 @@ public class TrailerRecyclerViewAdapter extends RecyclerView.Adapter<TrailerRecy
 
     public TrailerViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         Context context = viewGroup.getContext();
-        int layoutIdForListItem = R.layout.trailer_view;
+        int layoutIdForListItem = R.layout.trailer_item;
         LayoutInflater inflater = LayoutInflater.from(context);
         boolean shouldAttachToParentImmediately = false;
 
@@ -79,7 +79,7 @@ public class TrailerRecyclerViewAdapter extends RecyclerView.Adapter<TrailerRecy
         @Override
         public void onClick(View v) {
             int clickedPosition = getAdapterPosition();
-            trailerOnClickListener.onListItemClick(clickedPosition);
+            trailerOnClickListener.onListItemClick(v, clickedPosition);
         }
     }
 }

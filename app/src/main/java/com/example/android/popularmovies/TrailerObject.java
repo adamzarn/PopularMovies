@@ -16,7 +16,5 @@ public class TrailerObject {
 
     public String getKey() { return key; }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
 }

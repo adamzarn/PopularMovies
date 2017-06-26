@@ -16,6 +16,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.TypedValue;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -26,22 +27,23 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.URL;
 
+import static com.example.android.popularmovies.R.id.review_recycler_view;
 import static com.example.android.popularmovies.R.id.trailer_recycler_view;
 
-public class MovieDetailActivity extends AppCompatActivity
-        implements LoaderManager.LoaderCallbacks<JSONObject[]>, TrailerRecyclerViewAdapter.TrailerClickListener {
+public class MovieDetailActivity extends AppCompatActivity implements
+        LoaderManager.LoaderCallbacks<JSONObject[]>,
+        TrailerRecyclerViewAdapter.TrailerClickListener,
+        ReviewRecyclerViewAdapter.ReviewClickListener {
 
     private Context context;
 
     private static final String TRAILERS_URL_EXTRA = "trailers";
     private static final int TRAILERS_LOADER = 1;
 
+    private static final String REVIEWS_URL_EXTRA = "reviews";
+    private static final int REVIEWS_LOADER = 2;
+
     private String id;
-    private String title;
-    private String releaseDate;
-    private String voteAverage;
-    private String plotSynopsis;
-    private String posterPath;
 
     TextView titleTextView;
     TextView releaseDateTextView;
@@ -50,7 +52,9 @@ public class MovieDetailActivity extends AppCompatActivity
     ImageView moviePosterImageView;
 
     RecyclerView trailerRecyclerView;
+    RecyclerView reviewRecyclerView;
     TrailerRecyclerViewAdapter myTrailerRecyclerViewAdapter;
+    ReviewRecyclerViewAdapter myReviewRecyclerViewAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,11 +73,11 @@ public class MovieDetailActivity extends AppCompatActivity
 
         assert selectedMovie != null;
         id = selectedMovie.getID();
-        title = selectedMovie.getTitle();
-        releaseDate = selectedMovie.getReleaseDate();
-        voteAverage = selectedMovie.getVoteAverage() + " / 10";
-        plotSynopsis = selectedMovie.getPlotSynopsis();
-        posterPath = selectedMovie.getPosterPath();
+        String title = selectedMovie.getTitle();
+        String releaseDate = selectedMovie.getReleaseDate();
+        String voteAverage = selectedMovie.getVoteAverage() + " / 10";
+        String plotSynopsis = selectedMovie.getPlotSynopsis();
+        String posterPath = selectedMovie.getPosterPath();
 
         titleTextView.setText(title);
         releaseDateTextView.setText(releaseDate.substring(0,4));
@@ -81,35 +85,63 @@ public class MovieDetailActivity extends AppCompatActivity
         plotSynopsisTextView.setText(plotSynopsis);
 
         getMoviePoster(posterPath);
-        getTrailers();
+        getTrailersAndReviews();
 
         trailerRecyclerView = (RecyclerView) findViewById(trailer_recycler_view);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        trailerRecyclerView.setLayoutManager(layoutManager);
+        reviewRecyclerView = (RecyclerView) findViewById(review_recycler_view);
+
+        LinearLayoutManager trailersLayoutManager = new LinearLayoutManager(this);
+        LinearLayoutManager reviewsLayoutManager = new LinearLayoutManager(this);
+
+        trailerRecyclerView.setLayoutManager(trailersLayoutManager);
+        reviewRecyclerView.setLayoutManager(reviewsLayoutManager);
+
         trailerRecyclerView.setHasFixedSize(true);
+        reviewRecyclerView.setHasFixedSize(true);
 
         myTrailerRecyclerViewAdapter = new TrailerRecyclerViewAdapter(this);
+        myReviewRecyclerViewAdapter = new ReviewRecyclerViewAdapter(this);
+
         trailerRecyclerView.setAdapter(myTrailerRecyclerViewAdapter);
+        reviewRecyclerView.setAdapter(myReviewRecyclerViewAdapter);
 
     }
 
-    public void getTrailers() {
+    public void getTrailersAndReviews() {
+
         MovieDBClient client = new MovieDBClient();
         String apiKey = client.getApiKey(getApplicationContext());
-        String baseUrlSuffix = id + "/videos";
-        URL trailersURL = MovieDBClient.buildUrl(baseUrlSuffix, apiKey);
-        Bundle trailerBundle = new Bundle();
-        trailerBundle.putString(TRAILERS_URL_EXTRA, trailersURL.toString());
+
+        String trailersUrlSuffix = id + "/videos";
+        String reviewsUrlSuffix = id + "/reviews";
+
+        URL trailersUrl = MovieDBClient.buildUrl(trailersUrlSuffix, apiKey);
+        URL reviewsUrl = MovieDBClient.buildUrl(reviewsUrlSuffix, apiKey);
+
+        Bundle trailersBundle = new Bundle();
+        trailersBundle.putString(TRAILERS_URL_EXTRA, trailersUrl.toString());
+
+        Bundle reviewsBundle = new Bundle();
+        reviewsBundle.putString(REVIEWS_URL_EXTRA, reviewsUrl.toString());
 
         LoaderManager loaderManager = getSupportLoaderManager();
-        Loader<String[]> movieQueryLoader = loaderManager.getLoader(TRAILERS_LOADER);
 
-        if (movieQueryLoader == null) {
-            loaderManager.initLoader(TRAILERS_LOADER, trailerBundle, this).forceLoad();
+        Loader<String[]> trailersLoader = loaderManager.getLoader(TRAILERS_LOADER);
+        Loader<String[]> reviewsLoader = loaderManager.getLoader(REVIEWS_LOADER);
+
+        if (trailersLoader == null) {
+            loaderManager.initLoader(TRAILERS_LOADER, trailersBundle, this).forceLoad();
         } else {
-            loaderManager.restartLoader(TRAILERS_LOADER, trailerBundle, this).forceLoad();
+            loaderManager.restartLoader(TRAILERS_LOADER, trailersBundle, this).forceLoad();
+        }
+
+        if (reviewsLoader == null) {
+            loaderManager.initLoader(REVIEWS_LOADER, reviewsBundle, this).forceLoad();
+        } else {
+            loaderManager.restartLoader(REVIEWS_LOADER, reviewsBundle, this).forceLoad();
         }
     }
+
 
     public void getMoviePoster(String moviePoster) {
         String URLString = context.getResources().getString(R.string.poster_path_base_url) + moviePoster;
@@ -117,10 +149,17 @@ public class MovieDetailActivity extends AppCompatActivity
     }
 
     @Override
-    public void onListItemClick(int clickedItemIndex) {
-        TrailerObject clickedTrailer = myTrailerRecyclerViewAdapter.getItemAtPosition(clickedItemIndex);
-        String youtubeID = clickedTrailer.getKey();
-        watchYoutubeVideo(youtubeID);
+    public void onListItemClick(View view, int clickedItemIndex) {
+        int id = ((ViewGroup) view.getParent()).getId();
+        if (id == R.id.trailer_recycler_view) {
+            TrailerObject clickedTrailer = myTrailerRecyclerViewAdapter.getItemAtPosition(clickedItemIndex);
+            String youtubeID = clickedTrailer.getKey();
+            watchYoutubeVideo(youtubeID);
+        } else if (id == R.id.review_recycler_view) {
+            ReviewObject clickedReview = myReviewRecyclerViewAdapter.getItemAtPosition(clickedItemIndex);
+            String reviewID = clickedReview.getUrl();
+            openReview(reviewID);
+        }
     }
 
     private class ImageQueryTask extends AsyncTask<String, Void, Bitmap> {
@@ -156,23 +195,35 @@ public class MovieDetailActivity extends AppCompatActivity
     }
 
     @Override
-    public Loader<JSONObject[]> onCreateLoader(int id, final Bundle args) {
+    public Loader<JSONObject[]> onCreateLoader(final int id, final Bundle args) {
         return new AsyncTaskLoader<JSONObject[]>(this) {
 
             @Override
             public JSONObject[] loadInBackground() {
-                String trailersUrlString = args.getString(TRAILERS_URL_EXTRA);
-                if (trailersUrlString == null || TextUtils.isEmpty(trailersUrlString)) {
+                String urlString = null;
+                switch (id) {
+                    case 1:
+                        urlString = args.getString(TRAILERS_URL_EXTRA);
+                        break;
+                    case 2:
+                        urlString = args.getString(REVIEWS_URL_EXTRA);
+                        break;
+                    default:
+                        break;
+                }
+                System.out.println(urlString);
+
+                if (urlString == null || TextUtils.isEmpty(urlString)) {
                     return null;
                 }
-                JSONObject[] trailerPaths = null;
+                JSONObject[] objects;
                 try {
-                    URL searchUrl = new URL(trailersUrlString);
-                    String jsonTrailersResponse = MovieDBClient
+                    URL searchUrl = new URL(urlString);
+                    String jsonResponse = MovieDBClient
                             .getResponseFromHttpUrl(searchUrl);
-                    trailerPaths = MovieDBClient
-                            .getData(MovieDetailActivity.this, jsonTrailersResponse);
-                    return trailerPaths;
+                    objects = MovieDBClient
+                            .getData(MovieDetailActivity.this, jsonResponse);
+                    return objects;
                 } catch (Exception e) {
                     e.printStackTrace();
                     return null;
@@ -182,28 +233,54 @@ public class MovieDetailActivity extends AppCompatActivity
     }
 
     @Override
-    public void onLoadFinished(Loader<JSONObject[]> loader, JSONObject[] trailers) {
-        if (trailers != null) {
-            TrailerObject[] trailerObjects = new TrailerObject[trailers.length];
-            int i = 0;
-            for (JSONObject trailer : trailers) {
-                try {
-                    String key = trailer.getString("key");
-                    String name = trailer.getString("name");
-                    TrailerObject trailerObject = new TrailerObject(key, name);
-                    trailerObjects[i] = trailerObject;
-                } catch (JSONException e) {
-                    e.printStackTrace();
+    public void onLoadFinished(Loader<JSONObject[]> loader, JSONObject[] objects) {
+
+        int loaderID = loader.getId();
+        switch (loaderID) {
+            case 1:
+                if (objects != null) {
+                    TrailerObject[] trailerObjects = new TrailerObject[objects.length];
+                    int i = 0;
+                    for (JSONObject object : objects) {
+                        try {
+                            String key = object.getString("key");
+                            String name = object.getString("name");
+                            TrailerObject trailerObject = new TrailerObject(key, name);
+                            trailerObjects[i] = trailerObject;
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        i = i + 1;
+                    }
+                    myTrailerRecyclerViewAdapter.setData(trailerObjects);
+                    int height = myTrailerRecyclerViewAdapter.getItemCount() * 60;
+                    ViewGroup.LayoutParams params = trailerRecyclerView.getLayoutParams();
+                    params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
+                    trailerRecyclerView.setLayoutParams(params);
+                    break;
                 }
-                i = i + 1;
-            }
-            myTrailerRecyclerViewAdapter.setData(trailerObjects);
-            int height = myTrailerRecyclerViewAdapter.getItemCount()*60;
-            ViewGroup.LayoutParams params=trailerRecyclerView.getLayoutParams();
-            int dpHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
-            params.height=dpHeight;
-            trailerRecyclerView.setLayoutParams(params);
-            System.out.println(dpHeight);
+            case 2:
+                if (objects != null) {
+                    ReviewObject[] reviewObjects = new ReviewObject[objects.length];
+                    int i = 0;
+                    for (JSONObject object : objects) {
+                        try {
+                            String author = object.getString("author");
+                            String content = object.getString("content");
+                            String url = object.getString("url");
+                            ReviewObject reviewObject = new ReviewObject(author, content, url);
+                            reviewObjects[i] = reviewObject;
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        i = i + 1;
+                    }
+                    myReviewRecyclerViewAdapter.setData(reviewObjects);
+                    int height = myReviewRecyclerViewAdapter.getItemCount() * 360;
+                    ViewGroup.LayoutParams params = reviewRecyclerView.getLayoutParams();
+                    params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
+                    reviewRecyclerView.setLayoutParams(params);
+                }
         }
     }
 
@@ -219,6 +296,16 @@ public class MovieDetailActivity extends AppCompatActivity
             startActivity(appIntent);
         } catch (ActivityNotFoundException ex) {
             startActivity(webIntent);
+        }
+    }
+
+    public void openReview(String url) {
+        Intent webIntent = new Intent(Intent.ACTION_VIEW,
+                Uri.parse(url));
+        try {
+            startActivity(webIntent);
+        } catch (ActivityNotFoundException ex) {
+            return;
         }
     }
 }
