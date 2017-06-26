@@ -91,13 +91,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public Loader<JSONObject[]> onCreateLoader(int id, final Bundle args) {
         return new AsyncTaskLoader<JSONObject[]>(this) {
-            @Override
-            protected void onStartLoading() {
-                super.onStartLoading();
-                if (args == null) {
-                    return;
-                }
-            }
 
             @Override
             public JSONObject[] loadInBackground() {
@@ -111,8 +104,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     String jsonMovieResponse = MovieDBClient
                             .getResponseFromHttpUrl(searchUrl);
                     movies = MovieDBClient
-                            .getSimpleMovieStringsFromJson(MainActivity.this, jsonMovieResponse);
-                    System.out.println(movies.length);
+                            .getData(MainActivity.this, jsonMovieResponse);
                     return movies;
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -129,12 +121,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             int i = 0;
             for (JSONObject movie : movies) {
                 try {
+                    String id = movie.getString(getString(R.string.id));
                     String title = movie.getString(getString(R.string.original_title));
                     String release_date = movie.getString(getString(R.string.release_date));
                     String vote_average = movie.getString(getString(R.string.vote_average));
                     String plot_synopsis = movie.getString(getString(R.string.plot_synopsis));
                     String poster_path = movie.getString(getString(R.string.poster_jpg));
-                    MovieObject newMovie = new MovieObject(title, release_date, vote_average, plot_synopsis, poster_path);
+                    MovieObject newMovie = new MovieObject(id, title, release_date, vote_average, plot_synopsis, poster_path);
                     movieObjects[i] = newMovie;
                 } catch (JSONException e) {
                     e.printStackTrace();

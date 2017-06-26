@@ -2,7 +2,6 @@ package com.example.android.popularmovies;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.content.Context;
 
 /**
  * Created by adamzarn on 6/1/17.
@@ -10,13 +9,15 @@ import android.content.Context;
 
 public class MovieObject implements Parcelable {
 
+    private String id;
     private String title;
     private String release_date;
     private String vote_average;
     private String plot_synopsis;
     private String poster_path;
 
-    public MovieObject(String title, String release_date, String vote_average, String plot_synopsis, String poster_path) {
+    public MovieObject(String id, String title, String release_date, String vote_average, String plot_synopsis, String poster_path) {
+        this.id = id;
         this.title = title;
         this.release_date = release_date;
         this.vote_average = vote_average;
@@ -25,12 +26,15 @@ public class MovieObject implements Parcelable {
     }
 
     public MovieObject(Parcel parcel) {
+        this.id = parcel.readString();
         this.title = parcel.readString();
         this.release_date = parcel.readString();
         this.vote_average = parcel.readString();
         this.plot_synopsis = parcel.readString();
         this.poster_path = parcel.readString();
     }
+
+    public String getID() { return id; }
 
     public String getTitle() {
         return title;
@@ -59,6 +63,7 @@ public class MovieObject implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(id);
         dest.writeString(title);
         dest.writeString(release_date);
         dest.writeString(vote_average);

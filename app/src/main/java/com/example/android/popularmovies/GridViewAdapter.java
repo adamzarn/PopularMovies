@@ -1,23 +1,19 @@
 package com.example.android.popularmovies;
 
-import android.os.AsyncTask;
-import android.widget.BaseAdapter;
 import android.content.Context;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.GridView;
-import android.view.ViewGroup;
 import android.content.res.Resources;
-
-import java.net.URL;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-
-import org.json.JSONObject;
-import org.json.JSONException;
+import android.os.AsyncTask;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.GridView;
+import android.widget.ImageView;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.net.URL;
 
 /**
  * Created by adamzarn on 5/31/17.

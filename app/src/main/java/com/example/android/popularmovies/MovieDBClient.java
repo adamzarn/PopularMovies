@@ -1,18 +1,19 @@
 package com.example.android.popularmovies;
 
-import android.content.res.AssetManager;
-import java.io.InputStream;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Scanner;
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.net.Uri;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Scanner;
 
 /**
  * Created by adamzarn on 5/30/17.
@@ -38,8 +39,8 @@ public class MovieDBClient {
     final static String API_KEY = "api_key";
     final static String PAGE = "page";
 
-    public static URL buildUrl(String movieList, String apiKey) {
-        Uri builtUri = Uri.parse(MOVIEDB_BASE_URL + movieList).buildUpon()
+    public static URL buildUrl(String baseUrlSuffix, String apiKey) {
+        Uri builtUri = Uri.parse(MOVIEDB_BASE_URL + baseUrlSuffix).buildUpon()
                 .appendQueryParameter(API_KEY, apiKey)
                 .appendQueryParameter(PAGE, "1")
                 .build();
@@ -73,19 +74,18 @@ public class MovieDBClient {
         }
     }
 
-    public static JSONObject[] getSimpleMovieStringsFromJson(Context context, String movieJsonStr)
+    public static JSONObject[] getData(Context context, String jsonStr)
             throws JSONException {
 
-        final String MOVIE_RESULTS = "results";
-        final String MOVIE_STATUS_CODE = "status_code";
+        final String RESULTS = "results";
+        final String STATUS_CODE = "status_code";
 
-        String[] parsedMovieData = null;
-
-        JSONObject movieJson = new JSONObject(movieJsonStr);
+        JSONObject jsonObject = new JSONObject(jsonStr);
+        System.out.println(jsonObject);
 
         /* Is there an error? */
-        if (movieJson.has(MOVIE_STATUS_CODE)) {
-            int errorCode = movieJson.getInt(MOVIE_STATUS_CODE);
+        if (jsonObject.has(STATUS_CODE)) {
+            int errorCode = jsonObject.getInt(STATUS_CODE);
 
             switch (errorCode) {
                 case HttpURLConnection.HTTP_OK:
@@ -97,15 +97,17 @@ public class MovieDBClient {
             }
         }
 
-        JSONArray movieArray = movieJson.getJSONArray(MOVIE_RESULTS);
-        JSONObject[] movies = new JSONObject[movieArray.length()];
+        JSONArray dataArray = jsonObject.getJSONArray(RESULTS);
+        JSONObject[] data = new JSONObject[dataArray.length()];
 
-        for (int i = 0; i < movieArray.length(); i++) {
+        for (int i = 0; i < dataArray.length(); i++) {
 
-            JSONObject movie = movieArray.getJSONObject(i);
-            movies[i] = movie;
+            JSONObject datum = dataArray.getJSONObject(i);
+            data[i] = datum;
+            System.out.println(datum);
 
         }
-        return movies;
+        return data;
     }
+
 }

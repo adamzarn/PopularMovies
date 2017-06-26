@@ -3,11 +3,14 @@
     <string name="most_popular">MOST POPULAR</string>
     <string name="top_rated">TOP RATED</string>
     <string name="poster_path_base_url">http://image.tmdb.org/t/p/w185/</string>
+    <string name="id">id</string>
     <string name="original_title">original_title</string>
     <string name="release_date">release_date</string>
     <string name="vote_average">vote_average</string>
     <string name="plot_synopsis">overview</string>
     <string name="poster_jpg">poster_path</string>
+    <string name="trailers">Trailers</string>
+    <string name="reviews">Reviews</string>
     <string name="QUERY_POPULAR">popular</string>
     <string name="QUERY_TOP_RATED">top_rated</string>
 </resources>
