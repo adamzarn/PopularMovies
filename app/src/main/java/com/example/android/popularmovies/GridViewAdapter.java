@@ -66,7 +66,7 @@ public class GridViewAdapter extends BaseAdapter {
 
         currentMoviePoster = currentMovie.getPosterPath();
         String URLString = context.getResources().getString(R.string.poster_path_base_url) + currentMoviePoster;
-        ImageQueryTask task = new ImageQueryTask(context, imageView);
+        ImageQueryTask task = new ImageQueryTask(context, imageView, position);
         task.execute(URLString);
 
         return imageView;
@@ -81,10 +81,12 @@ public class GridViewAdapter extends BaseAdapter {
 
         private final WeakReference<ImageView> imageViewReference;
         private Context context;
+        private final int position;
 
-        public ImageQueryTask(Context context, ImageView img) {
+        public ImageQueryTask(Context context, ImageView img, int position) {
             imageViewReference = new WeakReference<ImageView>(img);
             this.context = context;
+            this.position = position;
         }
 
         @Override
@@ -115,6 +117,7 @@ public class GridViewAdapter extends BaseAdapter {
             if (bmp != null) {
                 final ImageView imageView = imageViewReference.get();
                 imageView.setImageBitmap(bmp);
+                myMovieData[position].setPoster(bmp);
             }
         }
     }

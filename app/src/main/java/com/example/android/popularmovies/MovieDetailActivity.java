@@ -1,12 +1,12 @@
 package com.example.android.popularmovies;
 
 import android.content.ActivityNotFoundException;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -18,15 +18,19 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.net.URL;
 
+import static com.example.android.popularmovies.R.id.no_reviews;
+import static com.example.android.popularmovies.R.id.no_trailers;
 import static com.example.android.popularmovies.R.id.review_recycler_view;
 import static com.example.android.popularmovies.R.id.trailer_recycler_view;
 
@@ -44,15 +48,26 @@ public class MovieDetailActivity extends AppCompatActivity implements
     private static final int REVIEWS_LOADER = 2;
 
     private String id;
+    private String title;
+    private String releaseDate;
+    private String voteAverage;
+    private String plotSynopsis;
 
     TextView titleTextView;
     TextView releaseDateTextView;
     TextView voteAverageTextView;
+    TextView favoritedTextView;
+    Button toggleFavoritesButton;
+    Bitmap poster;
     TextView plotSynopsisTextView;
     ImageView moviePosterImageView;
 
     RecyclerView trailerRecyclerView;
+    TextView noTrailersTextView;
+
     RecyclerView reviewRecyclerView;
+    TextView noReviewsTextView;
+
     TrailerRecyclerViewAdapter myTrailerRecyclerViewAdapter;
     ReviewRecyclerViewAdapter myReviewRecyclerViewAdapter;
 
@@ -66,6 +81,8 @@ public class MovieDetailActivity extends AppCompatActivity implements
         titleTextView = (TextView) findViewById(R.id.title);
         releaseDateTextView = (TextView) findViewById(R.id.release_date);
         voteAverageTextView = (TextView) findViewById(R.id.vote_average);
+        favoritedTextView = (TextView) findViewById(R.id.favorited);
+        toggleFavoritesButton = (Button) findViewById(R.id.toggle_favorites_button);
         plotSynopsisTextView = (TextView) findViewById(R.id.plot_synopsis);
         moviePosterImageView = (ImageView) findViewById(R.id.movie_poster);
 
@@ -73,22 +90,25 @@ public class MovieDetailActivity extends AppCompatActivity implements
 
         assert selectedMovie != null;
         id = selectedMovie.getID();
-        String title = selectedMovie.getTitle();
-        String releaseDate = selectedMovie.getReleaseDate();
-        String voteAverage = selectedMovie.getVoteAverage() + " / 10";
-        String plotSynopsis = selectedMovie.getPlotSynopsis();
-        String posterPath = selectedMovie.getPosterPath();
+        title = selectedMovie.getTitle();
+        releaseDate = selectedMovie.getReleaseDate();
+        voteAverage = selectedMovie.getVoteAverage() + " / 10";
+        plotSynopsis = selectedMovie.getPlotSynopsis();
+        poster = selectedMovie.getPoster();
 
         titleTextView.setText(title);
         releaseDateTextView.setText(releaseDate.substring(0,4));
         voteAverageTextView.setText(voteAverage);
         plotSynopsisTextView.setText(plotSynopsis);
+        moviePosterImageView.setImageBitmap(poster);
 
-        getMoviePoster(posterPath);
         getTrailersAndReviews();
 
         trailerRecyclerView = (RecyclerView) findViewById(trailer_recycler_view);
+        noTrailersTextView = (TextView) findViewById(no_trailers);
+
         reviewRecyclerView = (RecyclerView) findViewById(review_recycler_view);
+        noReviewsTextView = (TextView) findViewById(no_reviews);
 
         LinearLayoutManager trailersLayoutManager = new LinearLayoutManager(this);
         LinearLayoutManager reviewsLayoutManager = new LinearLayoutManager(this);
@@ -142,12 +162,6 @@ public class MovieDetailActivity extends AppCompatActivity implements
         }
     }
 
-
-    public void getMoviePoster(String moviePoster) {
-        String URLString = context.getResources().getString(R.string.poster_path_base_url) + moviePoster;
-        new ImageQueryTask().execute(URLString);
-    }
-
     @Override
     public void onListItemClick(View view, int clickedItemIndex) {
         int id = ((ViewGroup) view.getParent()).getId();
@@ -159,38 +173,6 @@ public class MovieDetailActivity extends AppCompatActivity implements
             ReviewObject clickedReview = myReviewRecyclerViewAdapter.getItemAtPosition(clickedItemIndex);
             String reviewID = clickedReview.getUrl();
             openReview(reviewID);
-        }
-    }
-
-    private class ImageQueryTask extends AsyncTask<String, Void, Bitmap> {
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            moviePosterImageView.setImageBitmap(null);
-        }
-
-        @Override
-        protected Bitmap doInBackground(String... params) {
-
-            String URLString = params[0];
-            Bitmap image = null;
-
-            try {
-                URL url = new URL(URLString);
-                return BitmapFactory.decodeStream(url.openConnection().getInputStream());
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bmp) {
-            if (bmp != null) {
-                moviePosterImageView.setImageBitmap(bmp);
-            }
         }
     }
 
@@ -253,11 +235,18 @@ public class MovieDetailActivity extends AppCompatActivity implements
                         i = i + 1;
                     }
                     myTrailerRecyclerViewAdapter.setData(trailerObjects);
-                    int height = myTrailerRecyclerViewAdapter.getItemCount() * 60;
-                    ViewGroup.LayoutParams params = trailerRecyclerView.getLayoutParams();
-                    params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
-                    trailerRecyclerView.setLayoutParams(params);
-                    break;
+                    if (trailerObjects.length > 0) {
+                        noTrailersTextView.setVisibility(View.GONE);
+                        trailerRecyclerView.setVisibility(View.VISIBLE);
+                        int height = myTrailerRecyclerViewAdapter.getItemCount() * 60;
+                        ViewGroup.LayoutParams params = trailerRecyclerView.getLayoutParams();
+                        params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
+                        trailerRecyclerView.setLayoutParams(params);
+                        break;
+                    } else {
+                        noTrailersTextView.setVisibility(View.VISIBLE);
+                        trailerRecyclerView.setVisibility(View.GONE);
+                    }
                 }
             case 2:
                 if (objects != null) {
@@ -276,10 +265,17 @@ public class MovieDetailActivity extends AppCompatActivity implements
                         i = i + 1;
                     }
                     myReviewRecyclerViewAdapter.setData(reviewObjects);
-                    int height = myReviewRecyclerViewAdapter.getItemCount() * 360;
-                    ViewGroup.LayoutParams params = reviewRecyclerView.getLayoutParams();
-                    params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
-                    reviewRecyclerView.setLayoutParams(params);
+                    if (reviewObjects.length > 0) {
+                        noReviewsTextView.setVisibility(View.GONE);
+                        reviewRecyclerView.setVisibility(View.VISIBLE);
+                        int height = myReviewRecyclerViewAdapter.getItemCount() * 360;
+                        ViewGroup.LayoutParams params = reviewRecyclerView.getLayoutParams();
+                        params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
+                        reviewRecyclerView.setLayoutParams(params);
+                    } else {
+                        noReviewsTextView.setVisibility(View.VISIBLE);
+                        reviewRecyclerView.setVisibility(View.GONE);
+                    }
                 }
         }
     }
@@ -307,5 +303,57 @@ public class MovieDetailActivity extends AppCompatActivity implements
         } catch (ActivityNotFoundException ex) {
             return;
         }
+    }
+
+    public void toggleFavoritesClicked(View view) {
+
+        if (toggleFavoritesButton.getText() == getString(R.string.add_to_favorites)) {
+
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_ID, id);
+            contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_TITLE, title);
+            contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_RELEASE_DATE, releaseDate);
+            contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_VOTE_AVERAGE, voteAverage);
+            contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS, plotSynopsis);
+            byte[] posterBytes = DbBitmapUtility.getBytes(poster);
+            contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_POSTER, posterBytes);
+
+            Uri uri = getContentResolver().insert(FavoritesContract.FavoritesEntry.CONTENT_URI, contentValues);
+
+            if (uri != null) {
+                favoritedTextView.setVisibility(View.VISIBLE);
+                Toast.makeText(getBaseContext(), getString(R.string.added_to_favorites), Toast.LENGTH_LONG).show();
+                toggleFavoritesButton.setText(getString(R.string.remove_from_favorites));
+            } else {
+                Toast.makeText(getBaseContext(), getString(R.string.not_added_to_favorites), Toast.LENGTH_LONG).show();
+            }
+
+        } else {
+            int numDeleted = getContentResolver().delete(FavoritesContract.FavoritesEntry.CONTENT_URI, "id=?", new String[]{id});
+            if (numDeleted > 0) {
+                favoritedTextView.setVisibility(View.GONE);
+                Toast.makeText(getBaseContext(), getString(R.string.removed_from_favorites), Toast.LENGTH_LONG).show();
+                toggleFavoritesButton.setText(getString(R.string.add_to_favorites));
+            } else {
+                Toast.makeText(getBaseContext(), getString(R.string.not_removed_from_favorites), Toast.LENGTH_LONG).show();
+            }
+        }
+
+    }
+
+    public static class DbBitmapUtility {
+
+        // convert from bitmap to byte array
+        public static byte[] getBytes(Bitmap bitmap) {
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 0, stream);
+            return stream.toByteArray();
+        }
+
+        // convert from byte array to bitmap
+        public static Bitmap getImage(byte[] image) {
+            return BitmapFactory.decodeByteArray(image, 0, image.length);
+        }
+
     }
 }

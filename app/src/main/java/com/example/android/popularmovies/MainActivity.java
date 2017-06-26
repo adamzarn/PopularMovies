@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     String vote_average = movie.getString(getString(R.string.vote_average));
                     String plot_synopsis = movie.getString(getString(R.string.plot_synopsis));
                     String poster_path = movie.getString(getString(R.string.poster_jpg));
-                    MovieObject newMovie = new MovieObject(id, title, release_date, vote_average, plot_synopsis, poster_path);
+                    MovieObject newMovie = new MovieObject(id, title, release_date, vote_average, plot_synopsis, poster_path, null);
                     movieObjects[i] = newMovie;
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -173,6 +173,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             editor.apply();
             myTextView.setText(getString(R.string.top_rated));
             return true;
+        } else if (id == R.id.favorites) {
+
         }
         return super.onOptionsItemSelected(item);
     }
