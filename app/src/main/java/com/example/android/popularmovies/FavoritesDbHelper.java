@@ -32,6 +32,7 @@ public class FavoritesDbHelper extends SQLiteOpenHelper {
                         FavoritesEntry.COLUMN_RELEASE_DATE    + " REAL NOT NULL, "                     +
                         FavoritesEntry.COLUMN_VOTE_AVERAGE    + " REAL NOT NULL, "                     +
                         FavoritesEntry.COLUMN_PLOT_SYNOPSIS   + " REAL NOT NULL, "                     +
+                        FavoritesEntry.COLUMN_POSTER_PATH     + " REAL NOT NULL, "                     +
                         FavoritesEntry.COLUMN_POSTER          + " REAL NOT NULL);";
 
         sqLiteDatabase.execSQL(SQL_CREATE_FAVORITES_TABLE);

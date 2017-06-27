@@ -73,29 +73,36 @@ public class FavoritesProvider extends ContentProvider {
     @Override
     public Cursor query(@NonNull Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
-        Cursor cursor;
+
+        final SQLiteDatabase db = favoritesDbHelper.getReadableDatabase();
+
+        Cursor retCursor;
 
         switch (uriMatcher.match(uri)) {
 
             case CODE_FAVORITES: {
-
-                cursor = favoritesDbHelper.getReadableDatabase().query(
-                        FavoritesContract.FavoritesEntry.TABLE_NAME,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        sortOrder);
-                break;
+                db.beginTransaction();
+                try {
+                    retCursor = db.query(
+                            FavoritesContract.FavoritesEntry.TABLE_NAME,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            sortOrder);
+                    db.setTransactionSuccessful();
+                    break;
+                } finally {
+                    db.endTransaction();
+                }
             }
-
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
 
-        cursor.setNotificationUri(getContext().getContentResolver(), uri);
-        return cursor;
+        retCursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return retCursor;
     }
 
     @Override
@@ -139,8 +146,6 @@ public class FavoritesProvider extends ContentProvider {
         switch (uriMatcher.match(uri)) {
 
             case CODE_FAVORITES:
-                db.beginTransaction();
-                int rowsInserted = 0;
 
                 long id = db.insert(FavoritesContract.FavoritesEntry.TABLE_NAME, null, values);
                 if (id > 0) {
@@ -153,6 +158,7 @@ public class FavoritesProvider extends ContentProvider {
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
+
         getContext().getContentResolver().notifyChange(uri, null);
 
         return returnUri;

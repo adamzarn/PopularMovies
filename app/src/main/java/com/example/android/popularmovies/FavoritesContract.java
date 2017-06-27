@@ -26,6 +26,7 @@ public class FavoritesContract {
             public static final String COLUMN_RELEASE_DATE = "release_date";
             public static final String COLUMN_VOTE_AVERAGE = "vote_average";
             public static final String COLUMN_PLOT_SYNOPSIS = "plot_synopsis";
+            public static final String COLUMN_POSTER_PATH = "poster_path";
             public static final String COLUMN_POSTER = "poster";
 
     }

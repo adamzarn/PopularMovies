@@ -59,6 +59,7 @@ public class MovieDetailActivity extends AppCompatActivity implements
     TextView favoritedTextView;
     Button toggleFavoritesButton;
     Bitmap poster;
+    String posterPath;
     TextView plotSynopsisTextView;
     ImageView moviePosterImageView;
 
@@ -94,6 +95,7 @@ public class MovieDetailActivity extends AppCompatActivity implements
         releaseDate = selectedMovie.getReleaseDate();
         voteAverage = selectedMovie.getVoteAverage() + " / 10";
         plotSynopsis = selectedMovie.getPlotSynopsis();
+        posterPath = selectedMovie.getPosterPath();
         poster = selectedMovie.getPoster();
 
         titleTextView.setText(title);
@@ -315,6 +317,7 @@ public class MovieDetailActivity extends AppCompatActivity implements
             contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_RELEASE_DATE, releaseDate);
             contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_VOTE_AVERAGE, voteAverage);
             contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS, plotSynopsis);
+            contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_POSTER_PATH, posterPath);
             byte[] posterBytes = DbBitmapUtility.getBytes(poster);
             contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_POSTER, posterBytes);
 
@@ -343,14 +346,12 @@ public class MovieDetailActivity extends AppCompatActivity implements
 
     public static class DbBitmapUtility {
 
-        // convert from bitmap to byte array
         public static byte[] getBytes(Bitmap bitmap) {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.PNG, 0, stream);
             return stream.toByteArray();
         }
 
-        // convert from byte array to bitmap
         public static Bitmap getImage(byte[] image) {
             return BitmapFactory.decodeByteArray(image, 0, image.length);
         }

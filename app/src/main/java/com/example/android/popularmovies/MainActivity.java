@@ -3,6 +3,9 @@ package com.example.android.popularmovies;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -21,9 +24,10 @@ import android.widget.TextView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.net.URL;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<JSONObject[]> {
+public class MainActivity extends AppCompatActivity {
 
     GridViewAdapter myGridViewAdapter;
     String moviePreference;
@@ -33,6 +37,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private static final String SEARCH_QUERY_URL_EXTRA = "query";
     private static final int MOVIE_QUERY_LOADER = 1;
+    private static final int FAVORITE_MOVIE_QUERY_LOADER = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,12 +66,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         SharedPreferences preferences = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
         moviePreference = preferences.getString("moviePreference", "popular");
-        makeMovieDBSearchQuery(moviePreference);
 
         if (moviePreference.equals("popular")) {
             myTextView.setText(getString(R.string.most_popular));
-        } else {
+            makeMovieDBSearchQuery(moviePreference);
+        } else if (moviePreference.equals("top_rated")) {
             myTextView.setText(getString(R.string.top_rated));
+            makeMovieDBSearchQuery(moviePreference);
+        } else {
+            myTextView.setText(getString(R.string.favorites));
+            getFavoriteMovies();
         }
     }
 
@@ -74,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         MovieDBClient client = new MovieDBClient();
         String apiKey = client.getApiKey(getApplicationContext());
         URL movieDBSearchUrl = MovieDBClient.buildUrl(movieType, apiKey);
+
         Bundle queryBundle = new Bundle();
         queryBundle.putString(SEARCH_QUERY_URL_EXTRA, movieDBSearchUrl.toString());
 
@@ -81,65 +91,25 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         Loader<JSONObject[]> movieQueryLoader = loaderManager.getLoader(MOVIE_QUERY_LOADER);
 
         if (movieQueryLoader == null) {
-            loaderManager.initLoader(MOVIE_QUERY_LOADER, queryBundle, this).forceLoad();
+            loaderManager.initLoader(MOVIE_QUERY_LOADER, queryBundle, onlineDatabaseListener).forceLoad();
         } else {
-            loaderManager.restartLoader(MOVIE_QUERY_LOADER, queryBundle, this).forceLoad();
+            loaderManager.restartLoader(MOVIE_QUERY_LOADER, queryBundle, onlineDatabaseListener).forceLoad();
         }
 
     }
 
-    @Override
-    public Loader<JSONObject[]> onCreateLoader(int id, final Bundle args) {
-        return new AsyncTaskLoader<JSONObject[]>(this) {
+    private void getFavoriteMovies() {
+        Bundle queryBundle = new Bundle();
 
-            @Override
-            public JSONObject[] loadInBackground() {
-                String searchQueryUrlString = args.getString(SEARCH_QUERY_URL_EXTRA);
-                if (searchQueryUrlString == null || TextUtils.isEmpty(searchQueryUrlString)) {
-                    return null;
-                }
-                JSONObject[] movies = null;
-                try {
-                    URL searchUrl = new URL(searchQueryUrlString);
-                    String jsonMovieResponse = MovieDBClient
-                            .getResponseFromHttpUrl(searchUrl);
-                    movies = MovieDBClient
-                            .getData(MainActivity.this, jsonMovieResponse);
-                    return movies;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            }
-        };
-    }
+        LoaderManager loaderManager = getSupportLoaderManager();
+        Loader<Cursor> favoriteMovieQueryLoader = loaderManager.getLoader(FAVORITE_MOVIE_QUERY_LOADER);
 
-    @Override
-    public void onLoadFinished(Loader<JSONObject[]> loader, JSONObject[] movies) {
-        if (movies != null) {
-            MovieObject[] movieObjects = new MovieObject[movies.length];
-            int i = 0;
-            for (JSONObject movie : movies) {
-                try {
-                    String id = movie.getString(getString(R.string.id));
-                    String title = movie.getString(getString(R.string.original_title));
-                    String release_date = movie.getString(getString(R.string.release_date));
-                    String vote_average = movie.getString(getString(R.string.vote_average));
-                    String plot_synopsis = movie.getString(getString(R.string.plot_synopsis));
-                    String poster_path = movie.getString(getString(R.string.poster_jpg));
-                    MovieObject newMovie = new MovieObject(id, title, release_date, vote_average, plot_synopsis, poster_path, null);
-                    movieObjects[i] = newMovie;
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                i = i + 1;
-            }
-            myGridViewAdapter.setData(movieObjects);
+        if (favoriteMovieQueryLoader == null) {
+            loaderManager.initLoader(FAVORITE_MOVIE_QUERY_LOADER, queryBundle, localDatabaseListener).forceLoad();
+        } else {
+            loaderManager.restartLoader(FAVORITE_MOVIE_QUERY_LOADER, queryBundle, localDatabaseListener).forceLoad();
         }
-    }
-
-    @Override
-    public void onLoaderReset(Loader<JSONObject[]> loader) {
+        System.out.println("Getting Favorite Movies");
     }
 
     @Override
@@ -174,8 +144,147 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             myTextView.setText(getString(R.string.top_rated));
             return true;
         } else if (id == R.id.favorites) {
-
+            getFavoriteMovies();
+            moviePreference = getString(R.string.QUERY_FAVORITES);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putString("moviePreference", moviePreference);
+            editor.apply();
+            myTextView.setText(getString(R.string.favorites));
+            return true;
         }
+
         return super.onOptionsItemSelected(item);
     }
+
+    public static class DbBitmapUtility {
+
+        public static byte[] getBytes(Bitmap bitmap) {
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 0, stream);
+            return stream.toByteArray();
+        }
+
+        public static Bitmap getImage(byte[] image) {
+            return BitmapFactory.decodeByteArray(image, 0, image.length);
+        }
+
+    }
+
+    private LoaderManager.LoaderCallbacks<JSONObject[]> onlineDatabaseListener
+            = new LoaderManager.LoaderCallbacks<JSONObject[]>() {
+
+        @Override
+        public Loader<JSONObject[]> onCreateLoader(int id, final Bundle args) {
+            return new AsyncTaskLoader<JSONObject[]>(context) {
+
+                @Override
+                public JSONObject[] loadInBackground() {
+                    String searchQueryUrlString = args.getString(SEARCH_QUERY_URL_EXTRA);
+                    if (searchQueryUrlString == null || TextUtils.isEmpty(searchQueryUrlString)) {
+                        return null;
+                    }
+                    JSONObject[] movies = null;
+                    try {
+                        URL searchUrl = new URL(searchQueryUrlString);
+                        String jsonMovieResponse = MovieDBClient
+                                .getResponseFromHttpUrl(searchUrl);
+                        movies = MovieDBClient
+                                .getData(MainActivity.this, jsonMovieResponse);
+                        return movies;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }
+            };
+        }
+
+        @Override
+        public void onLoadFinished(Loader<JSONObject[]> loader, JSONObject[] movies) {
+            if (movies != null) {
+                MovieObject[] movieObjects = new MovieObject[movies.length];
+                int i = 0;
+                for (JSONObject movie : movies) {
+                    try {
+                        String id = movie.getString(getString(R.string.id));
+                        String title = movie.getString(getString(R.string.original_title));
+                        String release_date = movie.getString(getString(R.string.release_date));
+                        String vote_average = movie.getString(getString(R.string.vote_average));
+                        String plot_synopsis = movie.getString(getString(R.string.plot_synopsis));
+                        String poster_path = movie.getString(getString(R.string.poster_jpg));
+                        MovieObject newMovie = new MovieObject(id, title, release_date, vote_average, plot_synopsis, poster_path, null);
+                        movieObjects[i] = newMovie;
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    i = i + 1;
+                }
+                myGridViewAdapter.setData(movieObjects);
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<JSONObject[]> loader) {
+        }
+    };
+
+    private LoaderManager.LoaderCallbacks<Cursor> localDatabaseListener
+            = new LoaderManager.LoaderCallbacks<Cursor>() {
+
+        @Override
+        public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+            return new AsyncTaskLoader<Cursor>(context) {
+
+                @Override
+                public Cursor loadInBackground() {
+                    try {
+                        System.out.println("Returning Cursor");
+                        return getContentResolver().query(FavoritesContract.FavoritesEntry.CONTENT_URI,
+                                null,
+                                null,
+                                null,
+                                FavoritesContract.FavoritesEntry._ID);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }
+            };
+        }
+
+        @Override
+        public void onLoadFinished (Loader<Cursor> loader, Cursor data) {
+            MovieObject[] movieObjects = new MovieObject[data.getCount()];
+            if (data.getCount() > 0) {
+                System.out.println("More than 0 records");
+                System.out.println(data.getCount());
+                int i = 0;
+                while (data.moveToNext()) {
+                    String id = data.getString(data.getColumnIndex("id"));
+                    String title = data.getString(data.getColumnIndex("title"));
+                    System.out.println(title);
+                    String release_date = data.getString(data.getColumnIndex("release_date"));
+                    String vote_average = data.getString(data.getColumnIndex("vote_average"));
+                    String plot_synopsis = data.getString(data.getColumnIndex("plot_synopsis"));
+                    String poster_path = data.getString(data.getColumnIndex("poster_path"));
+                    byte[] posterBytes = data.getBlob(data.getColumnIndex("poster"));
+                    Bitmap poster = DbBitmapUtility.getImage(posterBytes);
+                    MovieObject newMovie = new MovieObject(id, title, release_date, vote_average, plot_synopsis, poster_path, poster);
+                    movieObjects[i] = newMovie;
+                    i++;
+                }
+                myGridViewAdapter.setData(movieObjects);
+            } else {
+                myGridViewAdapter.setData(null);
+            }
+
+        }
+
+        @Override
+        public void onLoaderReset (Loader<Cursor> loader) {
+            System.out.println("Reset");
+        }
+
+    };
+
 }

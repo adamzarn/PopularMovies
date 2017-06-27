@@ -48,6 +48,10 @@ public class GridViewAdapter extends BaseAdapter {
 
     public View getView(int position, View convertView, ViewGroup parent) {
         ImageView imageView;
+
+        MovieObject currentMovie = getItem(position);
+        Bitmap poster = currentMovie.getPoster();
+
         if (convertView == null) {
             imageView = new ImageView(context);
             int x = getScreenWidth()/2;
@@ -56,11 +60,17 @@ public class GridViewAdapter extends BaseAdapter {
             imageView.setLayoutParams(new GridView.LayoutParams(x, y));
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             imageView.setPadding(0, 0, 0, 0);
+
+            if (poster != null) {
+                Bitmap resizedPoster = Bitmap.createScaledBitmap(
+                        poster, x, y, false);
+                imageView.setImageBitmap(resizedPoster);
+                return imageView;
+            }
+
         } else {
             imageView = (ImageView) convertView;
         }
-
-        MovieObject currentMovie = myMovieData[position];
 
         String currentMoviePoster;
 

@@ -19,6 +19,7 @@
 
     <string name="QUERY_POPULAR">popular</string>
     <string name="QUERY_TOP_RATED">top_rated</string>
+    <string name="QUERY_FAVORITES">favorites</string>
 
     <string name="no_trailers">There are no trailers to display.</string>
     <string name="no_reviews">There are no reviews to display.</string>
