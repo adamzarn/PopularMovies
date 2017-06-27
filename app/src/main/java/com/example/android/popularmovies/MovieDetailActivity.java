@@ -369,10 +369,6 @@ public class MovieDetailActivity extends AppCompatActivity implements
                         if (reviewObjects.length > 0) {
                             noReviewsTextView.setVisibility(View.GONE);
                             reviewRecyclerView.setVisibility(View.VISIBLE);
-                            int height = myReviewRecyclerViewAdapter.getItemCount() * 360;
-                            ViewGroup.LayoutParams params = reviewRecyclerView.getLayoutParams();
-                            params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
-                            reviewRecyclerView.setLayoutParams(params);
                         } else {
                             noReviewsTextView.setVisibility(View.VISIBLE);
                             reviewRecyclerView.setVisibility(View.GONE);
@@ -411,11 +407,9 @@ public class MovieDetailActivity extends AppCompatActivity implements
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
             if (data.getCount() > 0) {
-                System.out.println("Favorite");
                 favoritedTextView.setVisibility(View.VISIBLE);
                 toggleFavoritesButton.setText(getString(R.string.remove_from_favorites));
             } else {
-                System.out.println("Not a favorite");
                 favoritedTextView.setVisibility(View.GONE);
                 toggleFavoritesButton.setText(getString(R.string.add_to_favorites));
             }

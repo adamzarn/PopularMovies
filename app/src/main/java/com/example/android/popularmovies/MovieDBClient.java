@@ -99,14 +99,10 @@ public class MovieDBClient {
         JSONObject[] data = new JSONObject[dataArray.length()];
 
         for (int i = 0; i < dataArray.length(); i++) {
-
             JSONObject datum = dataArray.getJSONObject(i);
-            System.out.println(datum.getString("title"));
-            System.out.println(datum.getString("id"));
-            System.out.println("");
             data[i] = datum;
-
         }
+
         return data;
     }
 
