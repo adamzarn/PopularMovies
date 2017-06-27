@@ -52,31 +52,36 @@ public class GridViewAdapter extends BaseAdapter {
         MovieObject currentMovie = getItem(position);
         Bitmap poster = currentMovie.getPoster();
 
-        if (convertView == null) {
+        int x = getScreenWidth()/2;
+        Double yDouble = x*1.5027;
+        int y = yDouble.intValue();
+
+        if (poster != null) {
             imageView = new ImageView(context);
-            int x = getScreenWidth()/2;
-            Double yDouble = x*1.5027;
-            int y = yDouble.intValue();
+            Bitmap resizedPoster = Bitmap.createScaledBitmap(
+                    poster, x, y, false);
+            imageView.setImageBitmap(resizedPoster);
             imageView.setLayoutParams(new GridView.LayoutParams(x, y));
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             imageView.setPadding(0, 0, 0, 0);
+            return imageView;
+        }
 
-            if (poster != null) {
-                Bitmap resizedPoster = Bitmap.createScaledBitmap(
-                        poster, x, y, false);
-                imageView.setImageBitmap(resizedPoster);
-                return imageView;
-            }
-
+        if (convertView == null) {
+            imageView = new ImageView(context);
+            imageView.setLayoutParams(new GridView.LayoutParams(x, y));
+            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            imageView.setPadding(0, 0, 0, 0);
         } else {
             imageView = (ImageView) convertView;
         }
 
         String currentMoviePoster;
-
         currentMoviePoster = currentMovie.getPosterPath();
+
         String URLString = context.getResources().getString(R.string.poster_path_base_url) + currentMoviePoster;
         ImageQueryTask task = new ImageQueryTask(context, imageView, position);
+
         task.execute(URLString);
 
         return imageView;

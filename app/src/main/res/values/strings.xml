@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">PopularMovies</string>
 
+    <string name="my_preferences">MyPreferences</string>
+
     <string name="most_popular">MOST POPULAR</string>
     <string name="top_rated">TOP RATED</string>
     <string name="favorites">FAVORITES</string>
@@ -33,5 +35,8 @@
     <string name="remove_from_favorites">Remove from Favorites</string>
     <string name="removed_from_favorites">Successfully removed from Favorites</string>
     <string name="not_removed_from_favorites">Remove from favorites was unsuccessful</string>
+
+    <string name="videos_path">/videos</string>
+    <string name="reviews_path">/reviews</string>
 
 </resources>

@@ -122,8 +122,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
+        myGridViewAdapter.setData(null);
 
-        SharedPreferences preferences = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
+        SharedPreferences preferences = context.getSharedPreferences(getString(R.string.my_preferences), Context.MODE_PRIVATE);
 
         if (id == R.id.most_popular) {
             makeMovieDBSearchQuery(getString(R.string.QUERY_POPULAR));

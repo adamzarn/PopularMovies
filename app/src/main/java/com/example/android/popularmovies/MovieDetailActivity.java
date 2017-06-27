@@ -108,7 +108,7 @@ public class MovieDetailActivity extends AppCompatActivity implements
 
         titleTextView.setText(title);
         releaseDateTextView.setText(releaseDate.substring(0,4));
-        voteAverageTextView.setText(voteAverage);
+        voteAverageTextView.setText(voteAverageString);
         plotSynopsisTextView.setText(plotSynopsis);
         moviePosterImageView.setImageBitmap(poster);
 
@@ -159,8 +159,8 @@ public class MovieDetailActivity extends AppCompatActivity implements
         MovieDBClient client = new MovieDBClient();
         String apiKey = client.getApiKey(getApplicationContext());
 
-        String trailersUrlSuffix = id + "/videos";
-        String reviewsUrlSuffix = id + "/reviews";
+        String trailersUrlSuffix = id + getString(R.string.videos_path);
+        String reviewsUrlSuffix = id + getString(R.string.reviews_path);
 
         URL trailersUrl = MovieDBClient.buildUrl(trailersUrlSuffix, apiKey);
         URL reviewsUrl = MovieDBClient.buildUrl(reviewsUrlSuffix, apiKey);
