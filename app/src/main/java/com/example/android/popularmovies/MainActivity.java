@@ -53,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
 
         gridview.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-
                 MovieObject selectedMovie = (MovieObject) parent.getAdapter().getItem(position);
 
                 Context context = MainActivity.this;
@@ -109,7 +108,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             loaderManager.restartLoader(FAVORITE_MOVIE_QUERY_LOADER, queryBundle, localDatabaseListener).forceLoad();
         }
-        System.out.println("Getting Favorite Movies");
     }
 
     @Override
@@ -238,7 +236,6 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public Cursor loadInBackground() {
                     try {
-                        System.out.println("Returning Cursor");
                         return getContentResolver().query(FavoritesContract.FavoritesEntry.CONTENT_URI,
                                 null,
                                 null,
@@ -256,13 +253,10 @@ public class MainActivity extends AppCompatActivity {
         public void onLoadFinished (Loader<Cursor> loader, Cursor data) {
             MovieObject[] movieObjects = new MovieObject[data.getCount()];
             if (data.getCount() > 0) {
-                System.out.println("More than 0 records");
-                System.out.println(data.getCount());
                 int i = 0;
                 while (data.moveToNext()) {
                     String id = data.getString(data.getColumnIndex("id"));
                     String title = data.getString(data.getColumnIndex("title"));
-                    System.out.println(title);
                     String release_date = data.getString(data.getColumnIndex("release_date"));
                     String vote_average = data.getString(data.getColumnIndex("vote_average"));
                     String plot_synopsis = data.getString(data.getColumnIndex("plot_synopsis"));
@@ -282,7 +276,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onLoaderReset (Loader<Cursor> loader) {
-            System.out.println("Reset");
         }
 
     };

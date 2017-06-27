@@ -85,9 +85,9 @@ public class FavoritesProvider extends ContentProvider {
                 try {
                     retCursor = db.query(
                             FavoritesContract.FavoritesEntry.TABLE_NAME,
-                            null,
-                            null,
-                            null,
+                            projection,
+                            selection,
+                            selectionArgs,
                             null,
                             null,
                             sortOrder);

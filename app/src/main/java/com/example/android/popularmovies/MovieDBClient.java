@@ -59,7 +59,6 @@ public class MovieDBClient {
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
         try {
             InputStream in = urlConnection.getInputStream();
-            System.out.println(url.toString());
 
             Scanner scanner = new Scanner(in);
             scanner.useDelimiter("\\A");
@@ -82,7 +81,6 @@ public class MovieDBClient {
         final String STATUS_CODE = "status_code";
 
         JSONObject jsonObject = new JSONObject(jsonStr);
-        System.out.println(jsonObject);
 
         if (jsonObject.has(STATUS_CODE)) {
             int errorCode = jsonObject.getInt(STATUS_CODE);
@@ -103,6 +101,9 @@ public class MovieDBClient {
         for (int i = 0; i < dataArray.length(); i++) {
 
             JSONObject datum = dataArray.getJSONObject(i);
+            System.out.println(datum.getString("title"));
+            System.out.println(datum.getString("id"));
+            System.out.println("");
             data[i] = datum;
 
         }

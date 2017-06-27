@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -35,7 +36,6 @@ import static com.example.android.popularmovies.R.id.review_recycler_view;
 import static com.example.android.popularmovies.R.id.trailer_recycler_view;
 
 public class MovieDetailActivity extends AppCompatActivity implements
-        LoaderManager.LoaderCallbacks<JSONObject[]>,
         TrailerRecyclerViewAdapter.TrailerClickListener,
         ReviewRecyclerViewAdapter.ReviewClickListener {
 
@@ -47,10 +47,14 @@ public class MovieDetailActivity extends AppCompatActivity implements
     private static final String REVIEWS_URL_EXTRA = "reviews";
     private static final int REVIEWS_LOADER = 2;
 
+    private static final String FAVORITE_EXTRA = "id";
+    private static final int FAVORITE_LOADER = 3;
+
     private String id;
     private String title;
     private String releaseDate;
     private String voteAverage;
+    private String voteAverageString;
     private String plotSynopsis;
 
     TextView titleTextView;
@@ -72,10 +76,15 @@ public class MovieDetailActivity extends AppCompatActivity implements
     TrailerRecyclerViewAdapter myTrailerRecyclerViewAdapter;
     ReviewRecyclerViewAdapter myReviewRecyclerViewAdapter;
 
+    FavoritesProvider myFavoritesProvider;
+    FavoritesDbHelper myFavoritesDbHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_detail);
+
+        MovieObject selectedMovie = getIntent().getExtras().getParcelable("SELECTED_MOVIE");
 
         context = getApplicationContext();
 
@@ -87,13 +96,12 @@ public class MovieDetailActivity extends AppCompatActivity implements
         plotSynopsisTextView = (TextView) findViewById(R.id.plot_synopsis);
         moviePosterImageView = (ImageView) findViewById(R.id.movie_poster);
 
-        MovieObject selectedMovie = getIntent().getExtras().getParcelable("SELECTED_MOVIE");
-
         assert selectedMovie != null;
         id = selectedMovie.getID();
         title = selectedMovie.getTitle();
         releaseDate = selectedMovie.getReleaseDate();
-        voteAverage = selectedMovie.getVoteAverage() + " / 10";
+        voteAverage = selectedMovie.getVoteAverage();
+        voteAverageString = voteAverage + " / 10";
         plotSynopsis = selectedMovie.getPlotSynopsis();
         posterPath = selectedMovie.getPosterPath();
         poster = selectedMovie.getPoster();
@@ -127,6 +135,23 @@ public class MovieDetailActivity extends AppCompatActivity implements
         trailerRecyclerView.setAdapter(myTrailerRecyclerViewAdapter);
         reviewRecyclerView.setAdapter(myReviewRecyclerViewAdapter);
 
+        checkIfMovieIsFavorited(id);
+
+    }
+
+    public void checkIfMovieIsFavorited(String id) {
+        Bundle favoriteBundle = new Bundle();
+        favoriteBundle.putString(FAVORITE_EXTRA, id);
+
+        LoaderManager loaderManager = getSupportLoaderManager();
+
+        Loader<String[]> favoriteLoader = loaderManager.getLoader(FAVORITE_LOADER);
+
+        if (favoriteLoader == null) {
+            loaderManager.initLoader(FAVORITE_LOADER, favoriteBundle, checkIfRecordExists).forceLoad();
+        } else {
+            loaderManager.restartLoader(FAVORITE_LOADER, favoriteBundle, checkIfRecordExists).forceLoad();
+        }
     }
 
     public void getTrailersAndReviews() {
@@ -152,15 +177,15 @@ public class MovieDetailActivity extends AppCompatActivity implements
         Loader<String[]> reviewsLoader = loaderManager.getLoader(REVIEWS_LOADER);
 
         if (trailersLoader == null) {
-            loaderManager.initLoader(TRAILERS_LOADER, trailersBundle, this).forceLoad();
+            loaderManager.initLoader(TRAILERS_LOADER, trailersBundle, recyclerViewLoader).forceLoad();
         } else {
-            loaderManager.restartLoader(TRAILERS_LOADER, trailersBundle, this).forceLoad();
+            loaderManager.restartLoader(TRAILERS_LOADER, trailersBundle, recyclerViewLoader).forceLoad();
         }
 
         if (reviewsLoader == null) {
-            loaderManager.initLoader(REVIEWS_LOADER, reviewsBundle, this).forceLoad();
+            loaderManager.initLoader(REVIEWS_LOADER, reviewsBundle, recyclerViewLoader).forceLoad();
         } else {
-            loaderManager.restartLoader(REVIEWS_LOADER, reviewsBundle, this).forceLoad();
+            loaderManager.restartLoader(REVIEWS_LOADER, reviewsBundle, recyclerViewLoader).forceLoad();
         }
     }
 
@@ -176,114 +201,6 @@ public class MovieDetailActivity extends AppCompatActivity implements
             String reviewID = clickedReview.getUrl();
             openReview(reviewID);
         }
-    }
-
-    @Override
-    public Loader<JSONObject[]> onCreateLoader(final int id, final Bundle args) {
-        return new AsyncTaskLoader<JSONObject[]>(this) {
-
-            @Override
-            public JSONObject[] loadInBackground() {
-                String urlString = null;
-                switch (id) {
-                    case 1:
-                        urlString = args.getString(TRAILERS_URL_EXTRA);
-                        break;
-                    case 2:
-                        urlString = args.getString(REVIEWS_URL_EXTRA);
-                        break;
-                    default:
-                        break;
-                }
-                System.out.println(urlString);
-
-                if (urlString == null || TextUtils.isEmpty(urlString)) {
-                    return null;
-                }
-                JSONObject[] objects;
-                try {
-                    URL searchUrl = new URL(urlString);
-                    String jsonResponse = MovieDBClient
-                            .getResponseFromHttpUrl(searchUrl);
-                    objects = MovieDBClient
-                            .getData(MovieDetailActivity.this, jsonResponse);
-                    return objects;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            }
-        };
-    }
-
-    @Override
-    public void onLoadFinished(Loader<JSONObject[]> loader, JSONObject[] objects) {
-
-        int loaderID = loader.getId();
-        switch (loaderID) {
-            case 1:
-                if (objects != null) {
-                    TrailerObject[] trailerObjects = new TrailerObject[objects.length];
-                    int i = 0;
-                    for (JSONObject object : objects) {
-                        try {
-                            String key = object.getString("key");
-                            String name = object.getString("name");
-                            TrailerObject trailerObject = new TrailerObject(key, name);
-                            trailerObjects[i] = trailerObject;
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                        i = i + 1;
-                    }
-                    myTrailerRecyclerViewAdapter.setData(trailerObjects);
-                    if (trailerObjects.length > 0) {
-                        noTrailersTextView.setVisibility(View.GONE);
-                        trailerRecyclerView.setVisibility(View.VISIBLE);
-                        int height = myTrailerRecyclerViewAdapter.getItemCount() * 60;
-                        ViewGroup.LayoutParams params = trailerRecyclerView.getLayoutParams();
-                        params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
-                        trailerRecyclerView.setLayoutParams(params);
-                        break;
-                    } else {
-                        noTrailersTextView.setVisibility(View.VISIBLE);
-                        trailerRecyclerView.setVisibility(View.GONE);
-                    }
-                }
-            case 2:
-                if (objects != null) {
-                    ReviewObject[] reviewObjects = new ReviewObject[objects.length];
-                    int i = 0;
-                    for (JSONObject object : objects) {
-                        try {
-                            String author = object.getString("author");
-                            String content = object.getString("content");
-                            String url = object.getString("url");
-                            ReviewObject reviewObject = new ReviewObject(author, content, url);
-                            reviewObjects[i] = reviewObject;
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                        i = i + 1;
-                    }
-                    myReviewRecyclerViewAdapter.setData(reviewObjects);
-                    if (reviewObjects.length > 0) {
-                        noReviewsTextView.setVisibility(View.GONE);
-                        reviewRecyclerView.setVisibility(View.VISIBLE);
-                        int height = myReviewRecyclerViewAdapter.getItemCount() * 360;
-                        ViewGroup.LayoutParams params = reviewRecyclerView.getLayoutParams();
-                        params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
-                        reviewRecyclerView.setLayoutParams(params);
-                    } else {
-                        noReviewsTextView.setVisibility(View.VISIBLE);
-                        reviewRecyclerView.setVisibility(View.GONE);
-                    }
-                }
-        }
-    }
-
-    @Override
-    public void onLoaderReset(Loader<JSONObject[]> loader) {
     }
 
     public void watchYoutubeVideo(String id) {
@@ -357,4 +274,156 @@ public class MovieDetailActivity extends AppCompatActivity implements
         }
 
     }
+
+    private LoaderManager.LoaderCallbacks<JSONObject[]> recyclerViewLoader
+            = new LoaderManager.LoaderCallbacks<JSONObject[]>() {
+
+        @Override
+        public Loader<JSONObject[]> onCreateLoader(final int id, final Bundle args) {
+            return new AsyncTaskLoader<JSONObject[]>(context) {
+
+                @Override
+                public JSONObject[] loadInBackground() {
+                    String urlString = null;
+                    switch (id) {
+                        case 1:
+                            urlString = args.getString(TRAILERS_URL_EXTRA);
+                            break;
+                        case 2:
+                            urlString = args.getString(REVIEWS_URL_EXTRA);
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (urlString == null || TextUtils.isEmpty(urlString)) {
+                        return null;
+                    }
+                    JSONObject[] objects;
+                    try {
+                        URL searchUrl = new URL(urlString);
+                        String jsonResponse = MovieDBClient
+                                .getResponseFromHttpUrl(searchUrl);
+                        objects = MovieDBClient
+                                .getData(MovieDetailActivity.this, jsonResponse);
+                        return objects;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }
+            };
+        }
+
+        @Override
+        public void onLoadFinished(Loader<JSONObject[]> loader, JSONObject[] objects) {
+
+            int loaderID = loader.getId();
+            switch (loaderID) {
+                case 1:
+                    if (objects != null) {
+                        TrailerObject[] trailerObjects = new TrailerObject[objects.length];
+                        int i = 0;
+                        for (JSONObject object : objects) {
+                            try {
+                                String key = object.getString("key");
+                                String name = object.getString("name");
+                                TrailerObject trailerObject = new TrailerObject(key, name);
+                                trailerObjects[i] = trailerObject;
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            i = i + 1;
+                        }
+                        myTrailerRecyclerViewAdapter.setData(trailerObjects);
+                        if (trailerObjects.length > 0) {
+                            noTrailersTextView.setVisibility(View.GONE);
+                            trailerRecyclerView.setVisibility(View.VISIBLE);
+                            int height = myTrailerRecyclerViewAdapter.getItemCount() * 60;
+                            ViewGroup.LayoutParams params = trailerRecyclerView.getLayoutParams();
+                            params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
+                            trailerRecyclerView.setLayoutParams(params);
+                            break;
+                        } else {
+                            noTrailersTextView.setVisibility(View.VISIBLE);
+                            trailerRecyclerView.setVisibility(View.GONE);
+                        }
+                    }
+                case 2:
+                    if (objects != null) {
+                        ReviewObject[] reviewObjects = new ReviewObject[objects.length];
+                        int i = 0;
+                        for (JSONObject object : objects) {
+                            try {
+                                String author = object.getString("author");
+                                String content = object.getString("content");
+                                String url = object.getString("url");
+                                ReviewObject reviewObject = new ReviewObject(author, content, url);
+                                reviewObjects[i] = reviewObject;
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            i = i + 1;
+                        }
+                        myReviewRecyclerViewAdapter.setData(reviewObjects);
+                        if (reviewObjects.length > 0) {
+                            noReviewsTextView.setVisibility(View.GONE);
+                            reviewRecyclerView.setVisibility(View.VISIBLE);
+                            int height = myReviewRecyclerViewAdapter.getItemCount() * 360;
+                            ViewGroup.LayoutParams params = reviewRecyclerView.getLayoutParams();
+                            params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, getResources().getDisplayMetrics());
+                            reviewRecyclerView.setLayoutParams(params);
+                        } else {
+                            noReviewsTextView.setVisibility(View.VISIBLE);
+                            reviewRecyclerView.setVisibility(View.GONE);
+                        }
+                    }
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<JSONObject[]> loader) {
+        }
+
+    };
+
+
+    private LoaderManager.LoaderCallbacks<Cursor> checkIfRecordExists
+            = new LoaderManager.LoaderCallbacks<Cursor>() {
+
+        @Override
+        public Loader<Cursor> onCreateLoader(int id, final Bundle args) {
+            return new AsyncTaskLoader<Cursor>(context) {
+
+                @Override
+                public Cursor loadInBackground() {
+                    String selection = FavoritesContract.FavoritesEntry.COLUMN_ID + "=?";
+                    String[] selectionArgs = {args.getString(FAVORITE_EXTRA)};
+                    return getContentResolver().query(FavoritesContract.FavoritesEntry.CONTENT_URI,
+                            null,
+                            selection,
+                            selectionArgs,
+                            FavoritesContract.FavoritesEntry._ID);
+                }
+            };
+        }
+
+        @Override
+        public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+            if (data.getCount() > 0) {
+                System.out.println("Favorite");
+                favoritedTextView.setVisibility(View.VISIBLE);
+                toggleFavoritesButton.setText(getString(R.string.remove_from_favorites));
+            } else {
+                System.out.println("Not a favorite");
+                favoritedTextView.setVisibility(View.GONE);
+                toggleFavoritesButton.setText(getString(R.string.add_to_favorites));
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Cursor> loader) {
+        }
+    };
+
 }
