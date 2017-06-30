@@ -26,14 +26,17 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URL;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     GridViewAdapter myGridViewAdapter;
+    GridView gridview;
     String moviePreference;
     TextView myTextView;
     Context context;
     MenuItem selectedMenuItem;
+    int index;
 
     private static final String SEARCH_QUERY_URL_EXTRA = "query";
     private static final int MOVIE_QUERY_LOADER = 1;
@@ -43,10 +46,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        index = 0;
 
         context = getApplicationContext();
 
-        final GridView gridview = (GridView) findViewById(R.id.gridview);
+        gridview = (GridView) findViewById(R.id.gridview);
         myTextView = (TextView) findViewById(R.id.text_view);
         myGridViewAdapter = new GridViewAdapter(this);
         gridview.setAdapter(myGridViewAdapter);
@@ -66,16 +70,33 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences preferences = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
         moviePreference = preferences.getString("moviePreference", "popular");
 
-        if (moviePreference.equals("popular")) {
-            myTextView.setText(getString(R.string.most_popular));
-            makeMovieDBSearchQuery(moviePreference);
-        } else if (moviePreference.equals("top_rated")) {
-            myTextView.setText(getString(R.string.top_rated));
-            makeMovieDBSearchQuery(moviePreference);
+        if (savedInstanceState != null) {
+
+            ArrayList<MovieObject> items = savedInstanceState.getParcelableArrayList("myAdapter");
+            myGridViewAdapter.setItems(items);
+            myTextView.setText(savedInstanceState.getString("moviePreference"));
+
         } else {
-            myTextView.setText(getString(R.string.favorites));
-            getFavoriteMovies();
+
+            if (moviePreference.equals("popular")) {
+                myTextView.setText(getString(R.string.most_popular));
+                makeMovieDBSearchQuery(moviePreference);
+            } else if (moviePreference.equals("top_rated")) {
+                myTextView.setText(getString(R.string.top_rated));
+                makeMovieDBSearchQuery(moviePreference);
+            } else {
+                myTextView.setText(getString(R.string.favorites));
+                getFavoriteMovies();
+            }
         }
+
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList("myAdapter", myGridViewAdapter.getItems());
+        outState.putString("moviePreference", myTextView.getText().toString());
     }
 
     private void makeMovieDBSearchQuery(String movieType) {
@@ -118,41 +139,35 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    // COMPLETED (7) Override onOptionsItemSelected to handle clicks on the refresh button
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         myGridViewAdapter.setData(null);
 
-        SharedPreferences preferences = context.getSharedPreferences(getString(R.string.my_preferences), Context.MODE_PRIVATE);
-
         if (id == R.id.most_popular) {
             makeMovieDBSearchQuery(getString(R.string.QUERY_POPULAR));
-            moviePreference = getString(R.string.QUERY_POPULAR);
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putString("moviePreference", moviePreference);
-            editor.apply();
-            myTextView.setText(getString(R.string.most_popular));
+            saveMovieTypePreference(getString(R.string.QUERY_POPULAR), getString(R.string.most_popular));
             return true;
         } else if (id == R.id.top_rated) {
             makeMovieDBSearchQuery(getString(R.string.QUERY_TOP_RATED));
-            moviePreference = getString(R.string.QUERY_TOP_RATED);
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putString("moviePreference", moviePreference);
-            editor.apply();
-            myTextView.setText(getString(R.string.top_rated));
+            saveMovieTypePreference(getString(R.string.QUERY_TOP_RATED), getString(R.string.top_rated));
             return true;
         } else if (id == R.id.favorites) {
             getFavoriteMovies();
-            moviePreference = getString(R.string.QUERY_FAVORITES);
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putString("moviePreference", moviePreference);
-            editor.apply();
-            myTextView.setText(getString(R.string.favorites));
+            saveMovieTypePreference(getString(R.string.QUERY_FAVORITES), getString(R.string.favorites));
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void saveMovieTypePreference(String query, String text) {
+        SharedPreferences preferences = context.getSharedPreferences(getString(R.string.my_preferences), Context.MODE_PRIVATE);
+        moviePreference = query;
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("moviePreference", moviePreference);
+        editor.apply();
+        myTextView.setText(text);
     }
 
     public static class DbBitmapUtility {
@@ -207,11 +222,11 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         String id = movie.getString(getString(R.string.id));
                         String title = movie.getString(getString(R.string.original_title));
-                        String release_date = movie.getString(getString(R.string.release_date));
-                        String vote_average = movie.getString(getString(R.string.vote_average));
-                        String plot_synopsis = movie.getString(getString(R.string.plot_synopsis));
-                        String poster_path = movie.getString(getString(R.string.poster_jpg));
-                        MovieObject newMovie = new MovieObject(id, title, release_date, vote_average, plot_synopsis, poster_path, null);
+                        String releaseDate = movie.getString(getString(R.string.release_date));
+                        String voteAverage = movie.getString(getString(R.string.vote_average));
+                        String plotSynopsis = movie.getString(getString(R.string.plot_synopsis));
+                        String posterPath = movie.getString(getString(R.string.poster_jpg));
+                        MovieObject newMovie = new MovieObject(id, title, releaseDate, voteAverage, plotSynopsis, posterPath, null);
                         movieObjects[i] = newMovie;
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -258,13 +273,13 @@ public class MainActivity extends AppCompatActivity {
                 while (data.moveToNext()) {
                     String id = data.getString(data.getColumnIndex("id"));
                     String title = data.getString(data.getColumnIndex("title"));
-                    String release_date = data.getString(data.getColumnIndex("release_date"));
-                    String vote_average = data.getString(data.getColumnIndex("vote_average"));
-                    String plot_synopsis = data.getString(data.getColumnIndex("plot_synopsis"));
-                    String poster_path = data.getString(data.getColumnIndex("poster_path"));
+                    String releaseDate = data.getString(data.getColumnIndex("release_date"));
+                    String voteAverage = data.getString(data.getColumnIndex("vote_average"));
+                    String plotSynopsis = data.getString(data.getColumnIndex("plot_synopsis"));
+                    String posterPath = data.getString(data.getColumnIndex("poster_path"));
                     byte[] posterBytes = data.getBlob(data.getColumnIndex("poster"));
                     Bitmap poster = DbBitmapUtility.getImage(posterBytes);
-                    MovieObject newMovie = new MovieObject(id, title, release_date, vote_average, plot_synopsis, poster_path, poster);
+                    MovieObject newMovie = new MovieObject(id, title, releaseDate, voteAverage, plotSynopsis, posterPath, poster);
                     movieObjects[i] = newMovie;
                     i++;
                 }

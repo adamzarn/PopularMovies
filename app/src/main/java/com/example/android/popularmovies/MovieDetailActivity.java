@@ -76,9 +76,6 @@ public class MovieDetailActivity extends AppCompatActivity implements
     TrailerRecyclerViewAdapter myTrailerRecyclerViewAdapter;
     ReviewRecyclerViewAdapter myReviewRecyclerViewAdapter;
 
-    FavoritesProvider myFavoritesProvider;
-    FavoritesDbHelper myFavoritesDbHelper;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

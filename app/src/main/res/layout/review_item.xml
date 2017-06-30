@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content" >
@@ -8,32 +9,34 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#dadada"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"/>
+        android:layout_marginLeft="@dimen/margin_small"
+        android:layout_marginRight="@dimen/margin_small"/>
 
     <TextView
         android:id="@+id/review_content"
+        tools:text="Two thumbs up!"
         android:layout_gravity="center_vertical"
         android:gravity="center_vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="16dp"
-        android:layout_marginLeft="32dp"
-        android:layout_marginRight="32dp"
-        android:textSize="20sp" />
+        android:paddingTop="@dimen/margin_medium"
+        android:layout_marginLeft="@dimen/margin_medium"
+        android:layout_marginRight="@dimen/margin_large"
+        android:textSize="@dimen/size_medium" />
 
     <TextView
         android:id="@+id/review_author"
+        tools:text="Roger Ebert"
         android:layout_gravity="center_vertical"
         android:gravity="right"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="32dp"
-        android:layout_marginRight="32dp"
-        android:paddingTop="32dp"
-        android:paddingBottom="32dp"
+        android:layout_marginLeft="@dimen/margin_large"
+        android:layout_marginRight="@dimen/margin_large"
+        android:paddingTop="@dimen/margin_large"
+        android:paddingBottom="@dimen/margin_large"
         android:textStyle="italic"
-        android:textSize="20sp" />
+        android:textSize="@dimen/size_medium" />
 
 
 

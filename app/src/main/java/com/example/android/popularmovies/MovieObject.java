@@ -12,29 +12,29 @@ public class MovieObject implements Parcelable {
 
     private String id;
     private String title;
-    private String release_date;
-    private String vote_average;
-    private String plot_synopsis;
-    private String poster_path;
+    private String releaseDate;
+    private String voteAverage;
+    private String plotSynopsis;
+    private String posterPath;
     private Bitmap poster;
 
-    public MovieObject(String id, String title, String release_date, String vote_average, String plot_synopsis, String poster_path, Bitmap poster) {
+    public MovieObject(String id, String title, String releaseDate, String voteAverage, String plotSynopsis, String posterPath, Bitmap poster) {
         this.id = id;
         this.title = title;
-        this.release_date = release_date;
-        this.vote_average = vote_average;
-        this.plot_synopsis = plot_synopsis;
-        this.poster_path = poster_path;
+        this.releaseDate = releaseDate;
+        this.voteAverage = voteAverage;
+        this.plotSynopsis = plotSynopsis;
+        this.posterPath = posterPath;
         this.poster = poster;
     }
 
     public MovieObject(Parcel parcel) {
         this.id = parcel.readString();
         this.title = parcel.readString();
-        this.release_date = parcel.readString();
-        this.vote_average = parcel.readString();
-        this.plot_synopsis = parcel.readString();
-        this.poster_path = parcel.readString();
+        this.releaseDate = parcel.readString();
+        this.voteAverage = parcel.readString();
+        this.plotSynopsis = parcel.readString();
+        this.posterPath = parcel.readString();
         this.poster = (Bitmap) parcel.readValue(Bitmap.class.getClassLoader());
     }
 
@@ -45,19 +45,19 @@ public class MovieObject implements Parcelable {
     }
 
     public String getReleaseDate() {
-        return release_date;
+        return releaseDate;
     }
 
     public String getVoteAverage() {
-        return vote_average;
+        return voteAverage;
     }
 
     public String getPlotSynopsis() {
-        return plot_synopsis;
+        return plotSynopsis;
     }
 
     public String getPosterPath() {
-        return poster_path;
+        return posterPath;
     }
 
     public Bitmap getPoster() { return poster; }
@@ -75,10 +75,10 @@ public class MovieObject implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(id);
         dest.writeString(title);
-        dest.writeString(release_date);
-        dest.writeString(vote_average);
-        dest.writeString(plot_synopsis);
-        dest.writeString(poster_path);
+        dest.writeString(releaseDate);
+        dest.writeString(voteAverage);
+        dest.writeString(plotSynopsis);
+        dest.writeString(posterPath);
         dest.writeValue(poster);
     }
 

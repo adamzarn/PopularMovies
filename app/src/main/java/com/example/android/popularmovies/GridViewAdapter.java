@@ -14,6 +14,8 @@ import android.widget.ImageView;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by adamzarn on 5/31/17.
@@ -31,6 +33,14 @@ public class GridViewAdapter extends BaseAdapter {
     public int getCount() {
         if (myMovieData == null) { return 0; }
         return myMovieData.length;
+    }
+
+    public ArrayList<MovieObject> getItems() {
+        return new ArrayList<>(Arrays.asList(myMovieData));
+    }
+
+    public void setItems(ArrayList<MovieObject> arrayList) {
+        myMovieData = arrayList.toArray(new MovieObject[arrayList.size()]);
     }
 
     public MovieObject getItem(int position) {
@@ -131,7 +141,9 @@ public class GridViewAdapter extends BaseAdapter {
         protected void onPostExecute(Bitmap bmp) {
             if (bmp != null) {
                 final ImageView imageView = imageViewReference.get();
-                imageView.setImageBitmap(bmp);
+                if (imageView != null) {
+                    imageView.setImageBitmap(bmp);
+                }
                 myMovieData[position].setPoster(bmp);
             }
         }

@@ -15,7 +15,7 @@
             android:id="@+id/text_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="30sp"
+            android:textSize="@dimen/size_huge"
             android:textAlignment="center"/>
 
         <GridView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -23,8 +23,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:numColumns="auto_fit"
-            android:verticalSpacing="0dp"
-            android:horizontalSpacing="0dp"
+            android:verticalSpacing="@dimen/no_margin"
+            android:horizontalSpacing="@dimen/no_margin"
             android:stretchMode="columnWidth"
             android:gravity="center" />
 
